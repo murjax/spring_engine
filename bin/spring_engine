@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+require_relative '../lib/spring_engine/configure'
+SpringEngine::Configure.configure_spring_for_engine(ARGV)
