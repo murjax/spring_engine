@@ -1,29 +1,50 @@
 module SpringEngine
   class Configure
 
-    def self.configure_spring_for_engine(path_to_dummy)
-      require 'pry'; binding.pry;
+    def initialize(path_to_dummy)
+      @path = path_to_dummy.first
+    end
 
-      path = path_to_dummy.first
+    def configure_spring_for_engine
+      write_spring_config
+      exec_spring_binstub
+      copy_dummy_bin
+      write_bin_rails
+    end
+
+    def exec_spring_binstub
+      `bundle exec spring binstub --all`
+    end
+
+    def copy_dummy_bin
+      FileUtils.mkdir("bin") unless File.exists?("bin")
+      copy_standard_commands
+      copy_optional_commands
+    end
+
+    def copy_standard_commands
+      standard_commands = ['rake', 'spring']
+      standard_commands.each do |command|
+        `cp -r #{@path}/bin/#{command} bin/#{command}`
+      end
+    end
+
+    def copy_optional_commands
+      optional_commands = ['rspec', 'cucumber', 'spinach', 'testunit', 'teaspoon', 'm', 'rubocop']
+      optional_commands.each do |command|
+        `cp -r #{@path}/bin/rspec bin/#{command}` if File.exists?("#{@path}/bin/#{command}")
+      end
+    end
+
+    def write_spring_config
       FileUtils.mkdir("config") unless File.exists?("config")
 
       File.open("config/spring.rb", "w") do |file|
-        file.puts "Spring.application_root='#{path_to_dummy}'"
+        file.puts "Spring.application_root='#{@path}'"
       end
+    end
 
-      `bundle exec spring binstub --all`
-      FileUtils.mkdir("bin") unless File.exists?("bin")
-
-      `cp -r #{path}/bin/rake bin/rake`
-      `cp -r #{path}/bin/spring bin/spring`
-      `cp -r #{path}/bin/rspec bin/rspec` if File.exists?("#{path}/bin/rspec")
-      `cp -r #{path}/bin/cucumber bin/cucumber` if File.exists?("#{path}/bin/cucumber")
-      `cp -r #{path}/bin/spinach bin/spinach` if File.exists?("#{path}/bin/spinach")
-      `cp -r #{path}/bin/testunit bin/testunit` if File.exists?("#{path}/bin/testunit")
-      `cp -r #{path}/bin/teaspoon bin/teaspoon` if File.exists?("#{path}/bin/teaspoon")
-      `cp -r #{path}/bin/m bin/m` if File.exists?("#{path}/bin/m")
-      `cp -r #{path}/bin/rubocop bin/rubocop` if File.exists?("#{path}/bin/rubocop")
-
+    def write_bin_rails
       File.open("bin/rails", "w") do |file|
         file.puts "#!/usr/bin/env ruby
 # This command will automatically be run when you run 'rails' with Rails gems
@@ -45,4 +66,5 @@ require 'rails/engine/commands'"
       end
     end
   end
+
 end
